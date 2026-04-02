@@ -7,7 +7,7 @@
 #include <chrono>
 using namespace sycl;
 constexpr size_t M = 3;// For performance results -- try large scale matrices
-constexpr size_t N = 3;// For performance results -- try large scale matrices
+constexpr size_t N = 4;// For performance results -- try large scale matrices
 constexpr size_t P = 3;// For performance results -- try large scale matrices
 constexpr size_t TILE_SIZE = 2; // Set an appropriate tile size
 
@@ -84,32 +84,35 @@ void matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
 
 void e_usm_matrix_multiplication(const float* A_host, const float* B_host, float* C_host, queue& q) {
     // Allocate memory on the device
-    float* A = malloc_device<float>(N * N, q);
-    float* B = malloc_device<float>(N * N, q);
-    float* C = malloc_device<float>(N * N, q);
+    float* A = malloc_device<float>(M * N, q);
+    float* B = malloc_device<float>(N * P, q);
+    float* C = malloc_device<float>(M * P, q);
 
     // Copy data from host to device
-    q.memcpy(A, A_host, sizeof(float) * N * N);
-    q.memcpy(B, B_host, sizeof(float) * N * N);
+    q.memcpy(A, A_host, sizeof(float) * M * N).wait();
+    q.memcpy(B, B_host, sizeof(float) * N * P).wait();
 
     // Ensure the data is copied before starting computation
-    q.wait();
+    //q.wait();
 
     // Perform the matrix multiplication on the device
     q.submit([&](handler& h) {
-        h.parallel_for<class MatrixMulKernelUSMe>(range<2>(N, N), [=](id<2> idx) {
+        //sycl::stream out(1028, 256, h);
+        h.parallel_for<class MatrixMulKernelUSMe>(range<2>(M, P), [=](id<2> idx) {
             const int i = idx[0];
             const int j = idx[1];
             float temp = 0.0f;
             for (int k = 0; k < N; ++k) {
-                temp += A[i * N + k] * B[k * N + j];
+                temp += A[i * N + k] * B[k * P + j];
+                //out << i << " " << j << " " << k << " " << temp << endl;
             }
-            C[i * N + j] = temp;
-            });
+            C[i * P + j] = temp;
         });
+    });
+    q.wait();
 
     // Copy the result back to host memory
-    q.memcpy(C_host, C, sizeof(float) * N * N).wait();
+    q.memcpy(C_host, C, sizeof(float) * M * P).wait();
 
     // Free device memory
     free(A, q);
@@ -154,9 +157,9 @@ int main() {
     //float* C = malloc_shared<float>(N * N, q);
 
     auto start = std::chrono::high_resolution_clock::now();
-    //e_usm_matrix_multiplication(A, B, C, q);
+    //matrix_multiplication(A, B, C, q);
+    e_usm_matrix_multiplication(A, B, C, q);
     //tiled_matrix_multiplication(A, B, C, q);
-    matrix_multiplication(A, B, C, q);
     q.wait();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
@@ -173,7 +176,7 @@ int main() {
         }
         std::cout << "\t\t";
         for (int j = 0; j < Z; j++) {
-            std::cout << C[i * M + j] << "\t";
+            std::cout << C[i * P + j] << "\t";
         }
         std::cout << std::endl;
     }
