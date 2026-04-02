@@ -67,20 +67,20 @@ void matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
         });
 }
 
-void i_usm_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
-    // The kernel now directly uses the pointers A, B, and C
-    q.submit([&](handler& h) {
-        h.parallel_for<class MatrixMulKernelUSMi>(range<2>(N, N), [=](id<2> idx) {
-            const int i = idx[0];
-            const int j = idx[1];
-            float temp = 0.0f;
-            for (int k = 0; k < N; ++k) {
-                temp += A[i * N + k] * B[k * N + j];
-            }
-            C[i * N + j] = temp;
-            });
-        });
-}
+//void i_usm_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
+//    // The kernel now directly uses the pointers A, B, and C
+//    q.submit([&](handler& h) {
+//        h.parallel_for<class MatrixMulKernelUSMi>(range<2>(N, N), [=](id<2> idx) {
+//            const int i = idx[0];
+//            const int j = idx[1];
+//            float temp = 0.0f;
+//            for (int k = 0; k < N; ++k) {
+//                temp += A[i * N + k] * B[k * N + j];
+//            }
+//            C[i * N + j] = temp;
+//            });
+//        });
+//}
 
 void e_usm_matrix_multiplication(const float* A_host, const float* B_host, float* C_host, queue& q) {
     // Allocate memory on the device
