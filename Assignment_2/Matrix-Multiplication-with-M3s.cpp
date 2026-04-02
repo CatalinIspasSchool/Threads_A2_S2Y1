@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <chrono>
 using namespace sycl;
-constexpr size_t M = 6;// For performance results -- try large scale matrices
-constexpr size_t N = 6;// For performance results -- try large scale matrices
-constexpr size_t P = 6;// For performance results -- try large scale matrices
+constexpr size_t M = 3;// For performance results -- try large scale matrices
+constexpr size_t N = 3;// For performance results -- try large scale matrices
+constexpr size_t P = 3;// For performance results -- try large scale matrices
 constexpr size_t TILE_SIZE = 2; // Set an appropriate tile size
 
 void tiled_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
@@ -47,15 +47,15 @@ void tiled_matrix_multiplication(const float* A, const float* B, float* C, queue
 }
 
 void matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
-    buffer<float, 2> bufA(A, range<2>(N, N));
-    buffer<float, 2> bufB(B, range<2>(N, N));
-    buffer<float, 2> bufC(C, range<2>(N, N));
+    buffer<float, 2> bufA(A, range<2>(M, N));
+    buffer<float, 2> bufB(B, range<2>(N, P));
+    buffer<float, 2> bufC(C, range<2>(M, P));
     q.submit([&](handler& h) {
         auto accA = bufA.get_access<access::mode::read>(h);
         auto accB = bufB.get_access<access::mode::read>(h);
         auto accC = bufC.get_access<access::mode::write>(h);
 
-        h.parallel_for<class MatrixMulKernel>(range<2>(N, N), [=](id<2> idx) {
+        h.parallel_for<class MatrixMulKernel>(range<2>(M, P), [=](id<2> idx) {
             const int i = idx[0];
             const int j = idx[1];
             float temp = 0.0f;
@@ -123,16 +123,16 @@ int main() {
     float A[M * N];
     float B[N * P];
 
-    float C[N * N];
+    float C[M * P];
 
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-            A[i * M + j] = i;
+            A[i * N + j] = i;
         }
     }
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < P; j++) {
-            B[i * N + j] = j;
+            B[i * P + j] = j;
         }
     }
 
@@ -162,18 +162,18 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "For the Data: " << N << "x" << N << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
     std::cout << "Only part of the matrices is printed. AxB=C\n";
-    int P = std::min(static_cast<int>(N), 6);
-    for (int i = 0; i < P; i++) {
-        for (int j = 0; j < P; j++) {
+    int Z = std::min(static_cast<int>(N), 3);
+    for (int i = 0; i < Z; i++) {
+        for (int j = 0; j < Z; j++) {
             std::cout << A[i * N + j] << "\t";
         }
         std::cout << "\t\t";
-        for (int j = 0; j < P; j++) {
-            std::cout << B[i * N + j] << "\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << B[i * P + j] << "\t";
         }
         std::cout << "\t\t";
-        for (int j = 0; j < P; j++) {
-            std::cout << C[i * N + j] << "\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << C[i * M + j] << "\t";
         }
         std::cout << std::endl;
     }
