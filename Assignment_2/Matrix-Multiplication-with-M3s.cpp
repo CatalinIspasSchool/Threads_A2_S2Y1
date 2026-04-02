@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <chrono>
 using namespace sycl;
+constexpr size_t M = 6;// For performance results -- try large scale matrices
 constexpr size_t N = 6;// For performance results -- try large scale matrices
+constexpr size_t P = 6;// For performance results -- try large scale matrices
 constexpr size_t TILE_SIZE = 2; // Set an appropriate tile size
 
 void tiled_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
@@ -64,6 +66,7 @@ void matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
             });
         });
 }
+
 void i_usm_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
     // The kernel now directly uses the pointers A, B, and C
     q.submit([&](handler& h) {
@@ -113,44 +116,51 @@ void e_usm_matrix_multiplication(const float* A_host, const float* B_host, float
     free(B, q);
     free(C, q);
 }
+
 int main() {
 
 
-    float A[N * N];
-    float B[N * N];
+    float A[M * N];
+    float B[N * P];
+
     float C[N * N];
-    for (int i = 0; i < N; i++) {
+
+    for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-            A[i * N + j] = i;
+            A[i * M + j] = i;
+        }
+    }
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < P; j++) {
             B[i * N + j] = j;
         }
     }
-    queue q;
+
+
+    queue q(default_selector_v);            // set to gpu_selector_v or cpu_selector_v to set to cpu or gpu, but for now it defaults to cpu because IT STILL ISN'T WORKING
 
 
 
     // Querying local memory size and maximum work-group size
+    auto deviceName = q.get_device().get_info<info::device::name>();
     auto localMemSize = q.get_device().get_info<info::device::local_mem_size>();
     auto maxWorkGroupSize = q.get_device().get_info<info::device::max_work_group_size>();
 
+    std::cout << "Device Name:" << deviceName << '\n';
     std::cout << "Local Memory Size: " << localMemSize << " bytes\n";
     std::cout << "Max Work-Group Size: " << maxWorkGroupSize << std::endl;
     //float* A = malloc_shared<float>(N * N, q);
     //float* B = malloc_shared<float>(N * N, q);
     //float* C = malloc_shared<float>(N * N, q);
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            A[i * N + j] = i;
-            B[i * N + j] = j;
-        }
-    }
+
     auto start = std::chrono::high_resolution_clock::now();
     //e_usm_matrix_multiplication(A, B, C, q);
-    tiled_matrix_multiplication(A, B, C, q);
+    //tiled_matrix_multiplication(A, B, C, q);
+    matrix_multiplication(A, B, C, q);
     q.wait();
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    std::cout << "For the Data: " << N << "x" << N << "-Matrix multiplication took " << duration.count() << " nanoseconds.\n";
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    std::cout << "For the Data: " << N << "x" << N << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
     std::cout << "Only part of the matrices is printed. AxB=C\n";
     int P = std::min(static_cast<int>(N), 6);
     for (int i = 0; i < P; i++) {
