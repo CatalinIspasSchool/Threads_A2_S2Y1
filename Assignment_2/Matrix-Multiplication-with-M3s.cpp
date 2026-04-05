@@ -6,23 +6,46 @@
 #include <algorithm>
 #include <chrono>
 using namespace sycl;
-constexpr size_t M = 3;// For performance results -- try large scale matrices
-constexpr size_t N = 4;// For performance results -- try large scale matrices
-constexpr size_t P = 3;// For performance results -- try large scale matrices
-constexpr size_t TILE_SIZE = 2; // Set an appropriate tile size
+constexpr size_t M1 = 25;// For performance results -- try large scale matrices
+constexpr size_t N1 = 10;// For performance results -- try large scale matrices
+constexpr size_t P1 = 4;// For performance results -- try large scale matrices
+constexpr size_t TILE_SIZE1 = 2; // Set an appropriate tile size
+
+constexpr size_t M2 = 50;// For performance results -- try large scale matrices
+constexpr size_t N2 = 30;// For performance results -- try large scale matrices
+constexpr size_t P2 = 20;// For performance results -- try large scale matrices
+constexpr size_t TILE_SIZE2 = 5; // Set an appropriate tile size
+
+constexpr size_t M3 = 125;// For performance results -- try large scale matrices
+constexpr size_t N3 = 60;// For performance results -- try large scale matrices
+constexpr size_t P3 = 80;// For performance results -- try large scale matrices
+constexpr size_t TILE_SIZE3 = 5; // Set an appropriate tile size
+
+constexpr size_t M4 = 400;// For performance results -- try large scale matrices
+constexpr size_t N4 = 300;// For performance results -- try large scale matrices
+constexpr size_t P4 = 250;// For performance results -- try large scale matrices
+constexpr size_t TILE_SIZE4 = 10; // Set an appropriate tile size
+
+constexpr size_t M5 = 2000;// For performance results -- try large scale matrices
+constexpr size_t N5 = 1000;// For performance results -- try large scale matrices
+constexpr size_t P5 = 500;// For performance results -- try large scale matrices
+constexpr size_t TILE_SIZE5 = 20; // Set an appropriate tile size
+
 
 void tiled_matrix_multiplication(const float* A, const float* B, float* C, queue& q) {
-    buffer<float, 2> bufA(A, range<2>(N, N));
-    buffer<float, 2> bufB(B, range<2>(N, N));
-    buffer<float, 2> bufC(C, range<2>(N, N));
+    buffer<float, 2> bufA(A, range<2>(M, N));
+    buffer<float, 2> bufB(B, range<2>(N, P));
+    buffer<float, 2> bufC(C, range<2>(M, P));
     q.submit([&](handler& h) {
+        sycl::stream out(1028, 256, h);
+
         auto accA = bufA.get_access<access::mode::read>(h);
         auto accB = bufB.get_access<access::mode::read>(h);
         auto accC = bufC.get_access<access::mode::write>(h);
         accessor<float, 2, access::mode::read_write, access::target::local> tileA(range<2>(TILE_SIZE, TILE_SIZE), h);
         accessor<float, 2, access::mode::read_write, access::target::local> tileB(range<2>(TILE_SIZE, TILE_SIZE), h);
 
-        h.parallel_for<class TiledMatrixMulKernel>(nd_range<2>(range<2>(N, N), range<2>(TILE_SIZE, TILE_SIZE)), [=](nd_item<2> item) {
+        h.parallel_for<class TiledMatrixMulKernel>(nd_range<2>(range<2>(M, P), range<2>(TILE_SIZE, TILE_SIZE)), [=](nd_item<2> item) {
             const int globalRow = item.get_global_id(0);
             const int globalCol = item.get_global_id(1);
             const int localRow = item.get_local_id(0);
@@ -122,11 +145,11 @@ void e_usm_matrix_multiplication(const float* A_host, const float* B_host, float
 
 int main() {
 
+    float* A = new float[M1 * N1];
+    float* B = new float[N1 * P1];
 
-    float A[M * N];
-    float B[N * P];
+    float* C = new float[M1 * P1];
 
-    float C[M * P];
 
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
@@ -155,6 +178,14 @@ int main() {
     //float* A = malloc_shared<float>(N * N, q);
     //float* B = malloc_shared<float>(N * N, q);
     //float* C = malloc_shared<float>(N * N, q);
+
+
+    //for (int i = 0; i < 30; i++)
+    //{
+    //}
+
+
+
 
     auto start = std::chrono::high_resolution_clock::now();
     //matrix_multiplication(A, B, C, q);
