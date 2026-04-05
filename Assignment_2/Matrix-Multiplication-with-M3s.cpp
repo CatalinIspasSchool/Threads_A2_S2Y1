@@ -9,7 +9,7 @@ using namespace sycl;
 constexpr size_t M[5] = {25, 50, 125, 400, 2000};
 constexpr size_t N[5] = {10, 30, 60, 300, 1000};
 constexpr size_t P[5] = {4, 20, 80, 250, 500};
-constexpr size_t TILE_SIZE[5] = {2, 2, 5, 10, 20};
+constexpr size_t TILE_SIZE[5] = {2, 5, 10, 50, 50};
 
 
 
@@ -161,6 +161,13 @@ int main() {
                 B[i * P[0] + j] = j;
             }
         }
+        matrix_multiplication(A, B, C, q, 0);
+        q.wait();
+        e_usm_matrix_multiplication(A, B, C, q, 0);
+        q.wait();
+        tiled_matrix_multiplication(A, B, C, q, 0);
+        q.wait();
+
 
         float totalBuffTime = 0, totalExpTime = 0, totalTiledTime = 0;
         for (int i = 0; i < loopCount; i++)
@@ -169,24 +176,24 @@ int main() {
             matrix_multiplication(A, B, C, q, 0);
             q.wait();
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalBuffTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             e_usm_matrix_multiplication(A, B, C, q, 0);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalExpTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             tiled_matrix_multiplication(A, B, C, q, 0);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "100 elements average: Buffer/Accessor - " << totalBuffTime/loopCount << "ms \t Explicit - " << totalExpTime/loopCount << "ms \t Tiled - " << totalTiledTime/loopCount << "ms \n";
+        std::cout << "100 elements average: Buffer/Accessor - " << totalBuffTime/loopCount/1000000 << "ms \t Explicit - " << totalExpTime/loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime/loopCount / 1000000 << "ms \n";
     }
 
     //2
@@ -214,24 +221,24 @@ int main() {
             matrix_multiplication(A, B, C, q, 1);
             q.wait();
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalBuffTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             e_usm_matrix_multiplication(A, B, C, q, 1);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalExpTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             tiled_matrix_multiplication(A, B, C, q, 1);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "1000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount << "ms \t Explicit - " << totalExpTime / loopCount << "ms \t Tiled - " << totalTiledTime / loopCount << "ms \n";
+        std::cout << "1000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //3
@@ -259,24 +266,24 @@ int main() {
             matrix_multiplication(A, B, C, q, 2);
             q.wait();
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalBuffTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             e_usm_matrix_multiplication(A, B, C, q, 2);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalExpTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             tiled_matrix_multiplication(A, B, C, q, 2);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "10000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount << "ms \t Explicit - " << totalExpTime / loopCount << "ms \t Tiled - " << totalTiledTime / loopCount << "ms \n";
+        std::cout << "10000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //4
@@ -304,24 +311,24 @@ int main() {
             matrix_multiplication(A, B, C, q, 3);
             q.wait();
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalBuffTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             e_usm_matrix_multiplication(A, B, C, q, 3);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalExpTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             tiled_matrix_multiplication(A, B, C, q, 3);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "100000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount << "ms \t Explicit - " << totalExpTime / loopCount << "ms \t Tiled - " << totalTiledTime / loopCount << "ms \n";
+        std::cout << "100000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //5
@@ -349,66 +356,66 @@ int main() {
             matrix_multiplication(A, B, C, q, 4);
             q.wait();
             auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalBuffTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             e_usm_matrix_multiplication(A, B, C, q, 4);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalExpTime += duration.count();
 
             start = std::chrono::high_resolution_clock::now();
             tiled_matrix_multiplication(A, B, C, q, 4);
             q.wait();
             stop = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "1000000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount << "ms \t Explicit - " << totalExpTime / loopCount << "ms \t Tiled - " << totalTiledTime / loopCount << "ms \n";
+        std::cout << "1000000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     
-    float* A = new float[M[0] * N[0]];
-    float* B = new float[N[0] * P[0]];
-    float* C = new float[M[0] * P[0]];
-    int loopCount = 30;
+    //float* A = new float[M[0] * N[0]];
+    //float* B = new float[N[0] * P[0]];
+    //float* C = new float[M[0] * P[0]];
+    //int loopCount = 30;
 
-    for (int i = 0; i < M[0]; i++) {
-        for (int j = 0; j < N[0]; j++) {
-            A[i * N[0] + j] = i;
-        }
-    }
-    for (int i = 0; i < N[0]; i++) {
-        for (int j = 0; j < P[0]; j++) {
-            B[i * P[0] + j] = j;
-        }
-    }
+    //for (int i = 0; i < M[0]; i++) {
+    //    for (int j = 0; j < N[0]; j++) {
+    //        A[i * N[0] + j] = i;
+    //    }
+    //}
+    //for (int i = 0; i < N[0]; i++) {
+    //    for (int j = 0; j < P[0]; j++) {
+    //        B[i * P[0] + j] = j;
+    //    }
+    //}
 
-    auto start = std::chrono::high_resolution_clock::now();
-    matrix_multiplication(A, B, C, q, 0);
-    q.wait();
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    //auto start = std::chrono::high_resolution_clock::now();
+    //matrix_multiplication(A, B, C, q, 0);
+    //q.wait();
+    //auto stop = std::chrono::high_resolution_clock::now();
+    //auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
-    std::cout << "For the Data: " << N[0] << "x" << N[0] << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
-    std::cout << "Only part of the matrices is printed. AxB=C\n";
-    int Z = std::min(static_cast<int>(N[0]), 3);
-    for (int i = 0; i < Z; i++) {
-        for (int j = 0; j < Z; j++) {
-            std::cout << A[i * N[0] + j] << "\t";
-        }
-        std::cout << "\t\t";
-        for (int j = 0; j < Z; j++) {
-            std::cout << B[i * P[0] + j] << "\t";
-        }
-        std::cout << "\t\t";
-        for (int j = 0; j < Z; j++) {
-            std::cout << C[i * P[0] + j] << "\t";
-        }
-        std::cout << std::endl;
-    }
+    //std::cout << "For the Data: " << N[0] << "x" << N[0] << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
+    //std::cout << "Only part of the matrices is printed. AxB=C\n";
+    //int Z = std::min(static_cast<int>(N[0]), 3);
+    //for (int i = 0; i < Z; i++) {
+    //    for (int j = 0; j < Z; j++) {
+    //        std::cout << A[i * N[0] + j] << "\t";
+    //    }
+    //    std::cout << "\t\t";
+    //    for (int j = 0; j < Z; j++) {
+    //        std::cout << B[i * P[0] + j] << "\t";
+    //    }
+    //    std::cout << "\t\t";
+    //    for (int j = 0; j < Z; j++) {
+    //        std::cout << C[i * P[0] + j] << "\t";
+    //    }
+    //    std::cout << std::endl;
+    //}
 
     //free(A, q); // Free the allocated USM memory
     //free(B, q);
