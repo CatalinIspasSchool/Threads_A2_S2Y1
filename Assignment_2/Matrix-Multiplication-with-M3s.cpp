@@ -369,24 +369,47 @@ int main() {
         std::cout << "1000000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount << "ms \t Explicit - " << totalExpTime / loopCount << "ms \t Tiled - " << totalTiledTime / loopCount << "ms \n";
     }
 
+    
+    float* A = new float[M[0] * N[0]];
+    float* B = new float[N[0] * P[0]];
+    float* C = new float[M[0] * P[0]];
+    int loopCount = 30;
 
-    //std::cout << "For the Data: " << N << "x" << N << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
-    //std::cout << "Only part of the matrices is printed. AxB=C\n";
-    //int Z = std::min(static_cast<int>(N), 3);
-    //for (int i = 0; i < Z; i++) {
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << A[i * N + j] << "\t";
-    //    }
-    //    std::cout << "\t\t";
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << B[i * P + j] << "\t";
-    //    }
-    //    std::cout << "\t\t";
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << C[i * P + j] << "\t";
-    //    }
-    //    std::cout << std::endl;
-    //}
+    for (int i = 0; i < M[0]; i++) {
+        for (int j = 0; j < N[0]; j++) {
+            A[i * N[0] + j] = i;
+        }
+    }
+    for (int i = 0; i < N[0]; i++) {
+        for (int j = 0; j < P[0]; j++) {
+            B[i * P[0] + j] = j;
+        }
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+    matrix_multiplication(A, B, C, q, 0);
+    q.wait();
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+    std::cout << "For the Data: " << N[0] << "x" << N[0] << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
+    std::cout << "Only part of the matrices is printed. AxB=C\n";
+    int Z = std::min(static_cast<int>(N[0]), 3);
+    for (int i = 0; i < Z; i++) {
+        for (int j = 0; j < Z; j++) {
+            std::cout << A[i * N[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << B[i * P[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << C[i * P[0] + j] << "\t";
+        }
+        std::cout << std::endl;
+    }
+
     //free(A, q); // Free the allocated USM memory
     //free(B, q);
     //free(C, q);
