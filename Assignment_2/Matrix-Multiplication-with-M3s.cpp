@@ -136,10 +136,12 @@ int main() {
     auto deviceName = q.get_device().get_info<info::device::name>();
     auto localMemSize = q.get_device().get_info<info::device::local_mem_size>();
     auto maxWorkGroupSize = q.get_device().get_info<info::device::max_work_group_size>();
+    //auto maxTileSize = q.get_device().get_info<info::device::max_work_item_sizes<3>>();
 
     std::cout << "Device Name:" << deviceName << '\n';
     std::cout << "Local Memory Size: " << localMemSize << " bytes\n";
     std::cout << "Max Work-Group Size: " << maxWorkGroupSize << std::endl;
+    //std::cout << "Max Tile Size: " << maxTileSize[0] << " " << maxTileSize[1] << " " << maxTileSize[2] << std::endl;
     //float* A = malloc_shared<float>(N * N, q);
     //float* B = malloc_shared<float>(N * N, q);
     //float* C = malloc_shared<float>(N * N, q);
@@ -193,7 +195,7 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "100 elements average: Buffer/Accessor - " << totalBuffTime/loopCount/1000000 << "ms \t Explicit - " << totalExpTime/loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime/loopCount / 1000000 << "ms \n";
+        std::cout << "100 elements average (Tile size: " << TILE_SIZE[0] << ") Buffer/Accessor - " << totalBuffTime/loopCount/1000000 << "ms \t Explicit - " << totalExpTime/loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime/loopCount / 1000000 << "ms \n";
     }
 
     //2
@@ -238,7 +240,7 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "1000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
+        std::cout << "1000 elements average (Tile size: " << TILE_SIZE[1] << "): Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //3
@@ -283,7 +285,7 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "10000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
+        std::cout << "10000 elements average (Tile size: " << TILE_SIZE[2] << "): Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //4
@@ -328,7 +330,7 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "100000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
+        std::cout << "100000 elements average (Tile size: " << TILE_SIZE[3] << "): Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     //5
@@ -373,50 +375,99 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
             totalTiledTime += duration.count();
         }
-        std::cout << "1000000 elements average: Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
+        std::cout << "1000000 elements average (Tile size: " << TILE_SIZE[4] << "): Buffer/Accessor - " << totalBuffTime / loopCount / 1000000 << "ms \t Explicit - " << totalExpTime / loopCount / 1000000 << "ms \t Tiled - " << totalTiledTime / loopCount / 1000000 << "ms \n";
     }
 
     
-    //float* A = new float[M[0] * N[0]];
-    //float* B = new float[N[0] * P[0]];
-    //float* C = new float[M[0] * P[0]];
-    //int loopCount = 30;
+    float* A = new float[M[0] * N[0]];
+    float* B = new float[N[0] * P[0]];
+    float* C = new float[M[0] * P[0]];
 
-    //for (int i = 0; i < M[0]; i++) {
-    //    for (int j = 0; j < N[0]; j++) {
-    //        A[i * N[0] + j] = i;
-    //    }
-    //}
-    //for (int i = 0; i < N[0]; i++) {
-    //    for (int j = 0; j < P[0]; j++) {
-    //        B[i * P[0] + j] = j;
-    //    }
-    //}
+    for (int i = 0; i < M[0]; i++) {
+        for (int j = 0; j < N[0]; j++) {
+            A[i * N[0] + j] = i;
+        }
+    }
+    for (int i = 0; i < N[0]; i++) {
+        for (int j = 0; j < P[0]; j++) {
+            B[i * P[0] + j] = j;
+        }
+    }
 
-    //auto start = std::chrono::high_resolution_clock::now();
-    //matrix_multiplication(A, B, C, q, 0);
-    //q.wait();
-    //auto stop = std::chrono::high_resolution_clock::now();
-    //auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    // buffer/accessor
+    auto start = std::chrono::high_resolution_clock::now();
+    matrix_multiplication(A, B, C, q, 0);
+    q.wait();
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
-    //std::cout << "For the Data: " << N[0] << "x" << N[0] << "-Matrix multiplication took " << duration.count() << " Milliseconds.\n";
-    //std::cout << "Only part of the matrices is printed. AxB=C\n";
-    //int Z = std::min(static_cast<int>(N[0]), 3);
-    //for (int i = 0; i < Z; i++) {
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << A[i * N[0] + j] << "\t";
-    //    }
-    //    std::cout << "\t\t";
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << B[i * P[0] + j] << "\t";
-    //    }
-    //    std::cout << "\t\t";
-    //    for (int j = 0; j < Z; j++) {
-    //        std::cout << C[i * P[0] + j] << "\t";
-    //    }
-    //    std::cout << std::endl;
-    //}
+    std::cout << "For the Data: " << N[0] << "x" << N[0] << " - Buffer/Accessor Matrix multiplication took " << (float)duration.count() / 1000000 << " Milliseconds.\n";
+    std::cout << "Only part of the matrices is printed. AxB=C\n";
+    int Z = std::min(static_cast<int>(N[0]), 3);
+    for (int i = 0; i < Z; i++) {
+        for (int j = 0; j < Z; j++) {
+            std::cout << A[i * N[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << B[i * P[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << C[i * P[0] + j] << "\t";
+        }
+        std::cout << std::endl;
+    }
 
+    // e_usm
+    start = std::chrono::high_resolution_clock::now();
+    e_usm_matrix_multiplication(A, B, C, q, 0);
+    q.wait();
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+    std::cout << "For the Data: " << N[0] << "x" << N[0] << " - Explicit Matrix multiplication took " << (float)duration.count() / 1000000 << " Milliseconds.\n";
+    std::cout << "Only part of the matrices is printed. AxB=C\n";
+    Z = std::min(static_cast<int>(N[0]), 3);
+    for (int i = 0; i < Z; i++) {
+        for (int j = 0; j < Z; j++) {
+            std::cout << A[i * N[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << B[i * P[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << C[i * P[0] + j] << "\t";
+        }
+        std::cout << std::endl;
+    }
+
+    // tiles
+    start = std::chrono::high_resolution_clock::now();
+    tiled_matrix_multiplication(A, B, C, q, 0);
+    q.wait();
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+    std::cout << "For the Data: " << N[0] << "x" << N[0] << " - Tiled Matrix multiplication took " << (float)duration.count() / 1000000 << " Milliseconds.\n";
+    std::cout << "Only part of the matrices is printed. AxB=C\n";
+    Z = std::min(static_cast<int>(N[0]), 3);
+    for (int i = 0; i < Z; i++) {
+        for (int j = 0; j < Z; j++) {
+            std::cout << A[i * N[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << B[i * P[0] + j] << "\t";
+        }
+        std::cout << "\t\t";
+        for (int j = 0; j < Z; j++) {
+            std::cout << C[i * P[0] + j] << "\t";
+        }
+        std::cout << std::endl;
+    }
     //free(A, q); // Free the allocated USM memory
     //free(B, q);
     //free(C, q);
